@@ -158,7 +158,10 @@ public class QuerydslBasicTest {
         assertThat(cnt).isEqualTo(4);
 
     }
-    
+
+    /**
+     * 집합
+     */
     @Test
     public void aggregation() throws Exception{
         List<Tuple> fetch = queryFactory
@@ -173,6 +176,10 @@ public class QuerydslBasicTest {
         assertThat(tuple.get(member.count())).isEqualTo(4);
         assertThat(tuple.get(member.age.sum())).isEqualTo(100);
     }
+
+    /**
+     * 그룹핑
+     */
 
     @Test
     public void groupby() throws Exception{
@@ -189,5 +196,43 @@ public class QuerydslBasicTest {
         assertThat(teamA.get(member.age.avg())).isEqualTo(15);
         assertThat(teamB.get(team.name)).isEqualTo("teamB");
         assertThat(teamB.get(member.age.avg())).isEqualTo(35);
+    }
+
+    /**
+     * 팀과 맴버 조인 (연관관계 유)
+     */
+    @Test
+    public void join() throws Exception{
+        //given
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+        //then
+        assertThat(result)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+    }
+
+    /**
+     * 연관관계없는 테이블 조인
+     */
+    @Test
+    public void test() throws Exception{
+        //given
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC"));
+
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member, team)
+                .where(member.username.eq(team.name))
+                .fetch();
+
+        assertThat(result)
+                .extracting("username")
+                .containsExactly("teamA", "teamB");
     }
 }
