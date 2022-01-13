@@ -13,6 +13,8 @@ import study.querydsl.entity.QMember;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
@@ -286,5 +288,31 @@ public class QuerydslBasicTest {
         for (Tuple member1 : result) {
             System.out.println("member1 = " + member1);
         }
+    }
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void without_fetchJoin() throws Exception{
+        em.flush();
+        em.clear();
+
+        Member member1 = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(member1.getTeam());
+        assertThat(loaded).as("패치 조인 미적용").isFalse();
+
+        Member memberWithFetchJoin = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        loaded = emf.getPersistenceUnitUtil().isLoaded(memberWithFetchJoin.getTeam());
+        assertThat(loaded).as("패치 조인 적용").isTrue();
     }
 }
