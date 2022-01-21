@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDTO;
+import study.querydsl.dto.QMemberDTO;
 import study.querydsl.dto.UserDTO;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
@@ -453,7 +455,7 @@ public class QuerydslBasicTest {
         }
     }
     /*
-    프로젝션으로 DTO 바로 반환받기
+    프로젝션으로 setter로 DTO 바로 원하는 필드만 반환받기
      */
     @Test
     public void findDtoBySetter() throws Exception{
@@ -467,7 +469,9 @@ public class QuerydslBasicTest {
             System.out.println("memberDTO = " + memberDTO);
         }
     }
-
+    /*
+    프로젝션 field로 dto 원하는 필드만 반환받기
+     */
     @Test
     public void findDtoByField() throws Exception{
         List<MemberDTO> result = queryFactory
@@ -481,8 +485,11 @@ public class QuerydslBasicTest {
         }
     }
 
+    /*
+    프로젝션 dto 생성자로 원하는 필드만 반환받기
+     */
     @Test
-    public void findDtoByConsturctor() throws Exception{
+    public void findDtoByConstructor() throws Exception{
         QMember memberSub = new QMember("memberSub");
 
         List<UserDTO> result = queryFactory
@@ -498,5 +505,24 @@ public class QuerydslBasicTest {
         for (UserDTO userDTO : result) {
             System.out.println("userDTO = " + userDTO);
         }
+    }
+
+    /*
+    constructor에 QueryProjection 설정 -> Q파일을 생성하여 사용
+    장점 : 컴파일 오류로 체크할 수 있다.
+    단점 : dto에 queryDsl에 대한 의존성을 갖게됨
+    dto는 여러 레이어에 거쳐서 사용이 되는데, 구조적인 관점에서 dto가 복잡해지는 문제가 있다.
+     */
+    @Test
+    public void findDtoByQueryProjection() throws Exception{
+        List<MemberDTO> result = queryFactory
+                .select(new QMemberDTO(member.username, member.age))
+                .from(member)
+                .fetch();
+        //then
+        for (MemberDTO memberDTO : result) {
+            System.out.println(memberDTO);
+        }
+
     }
 }
